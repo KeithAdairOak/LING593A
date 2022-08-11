@@ -58,7 +58,6 @@ def set_span(text,linkterm,searchterm,ner,annotator,start):
     if ner.get(linkterm):
         label = "-".join([span for span in ner[linkterm]])
         spans = [((m.span()[0] + start,m.span()[1] + start),label) for m in re.finditer(re.escape(searchterm),text)]
-#        spans = [(m.span(),label) for m in re.finditer(re.escape(searchterm),text)]
         return compressing_spans(spans,annotator)
     else:
         return annotator
@@ -97,70 +96,7 @@ def spoil_space(text):
             break
     return text.strip()
 
-########## process for wikiterm
-#def extract_wikipedia_links(text,ner):
-    candid = {}
-    annotator = {}
-    
-    while True:
-        start = text.find('[[')
-        end = text.find(']]')
-        if start > -1 and end > -1 and end > start:
-            while text[end+2] == ']':
-                end += 1
-            before = text[:start]
-            after = text[end+2:]
-            m = True
-            while m:
-                m = re.search("\[\[.+?\|(.+?)(\|.+?)?\]\]",after)
-                if m:
-                    after = after.replace(m.group(0),m.group(1))
-
-            mention = text[start+2:end]
-            parts = mention.split('|')
-            wikilink = parts[0].strip()
-            if len(parts) == 1:
-                term_in_text = parts[0].strip()
-            else:           
-                term_in_text = parts[1].strip()
-            column_1st = wikilink.split("(")[0].strip()
-            column_2nd = (term_in_text[:1] + term_in_text[1:].split("(")[0]).strip()
-            m = re.match("^[\u3000-\u3002・](.+)$",column_2nd)
-            if m:
-                column_2nd = m.group(1)
-            m = re.match("^[（〈《「【〔〖〘〚](.+)[〛〙〗〕】』」》〉）]$",column_2nd)
-            if m:
-                column_2nd = m.group(1)
-            
-            if wikilink.find("#") > -1:
-                pass
-            elif (len(parts) == 3 and parts[-1] == "ACRONYM"):
-    
-                candid[spoil_space(column_2nd)] = wikilink
-            elif column_1st in (before + after) and not column_2nd in (before + after):
-                candid[spoil_space(column_2nd)] = wikilink
-            elif column_2nd in (before + after) and not column_1st in (before + after):
-                candid[spoil_space(column_1st)] = wikilink
-                term_in_text = column_1st
-            elif column_1st in column_2nd:
-                candid[spoil_space(column_1st)] = wikilink
-#            elif column_2nd in column_1st:
-#                candid[column_2nd] = wikilink
-            else:
-                candid[spoil_space(column_2nd)] = wikilink
-
-            
-            text = text[:start] + term_in_text + text[end+2:]
-        else:
-#            m = re.search("(.*)"+JapaneseScripts+" "+JapaneseScripts+"(.*)",text)
-#            if m:
- #               text = "".join(m.groups())
-  #          else:
-            break
-    text = spoil_space(text)
-    for searchterm,linkterm in candid.items():
-        annotator = set_span(text,linkterm,searchterm,ner,annotator)
-    return annotator,text            
+   
 
 def set_spans(linkterm,a,b,ner,annotator):
     if ner.get(linkterm):
@@ -241,7 +177,6 @@ def extract_wikipedia_link(text,ner):
             if key and key in term_in_text:
                 annotator = set_span(term_in_text,wikilink,key,ner,annotator,start)
             text = text[:start] + term_in_text + text[end+2:]
-#           text = text[:start] + term_in_text + anchor
 
         else:
 #            text = text[:-len(anchor)] + spoil_space(anchor)
@@ -254,11 +189,10 @@ def extract_wikipedia_link(text,ner):
 
 ########## process for rule-based matching
 def rule_based_matching(text,compiled,label,annotator):
-    spans = [m.span(0) for m in compiled.finditer(mojimoji.zen_to_han(text))]
+  
+    spans = [m.span(0) for m in compiled.finditer(text)]
     if len(spans) > 0:
         annotator[label] = spans
-#        for span in spans:
-#            text = text[:span[0]] + text[span[0]:span[1]] + text[span[1]:]
     return annotator,text
 
 def suffix_matching(text,rules,label,annotator,extend=True):
@@ -394,6 +328,9 @@ def process(article,ner,gengo):
         file = re.sub('\n?。', "。", re.sub('\n?、\n?', "、", f_in.read())).replace("。","。\n")
         for line in file.split("\n"):
             content = line.strip()
+            if "ハドソン・ストリート沿い" in content:
+                a = 1
+
             if not content:
                 continue
             elif not content.endswith("。"):
