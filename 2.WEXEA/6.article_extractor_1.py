@@ -15,13 +15,13 @@ import mojimoji
 #ja_spacy = spacy.load("ja_core_news_sm")
 #ja_ginza = spacy.load("ja_ginza")
 
-regex_year = "(西暦|紀元[前後])?\d+年|(\d+|元)年|\'\d{2}"
+regex_year = "(西暦|紀元[前後])?[0-9０-９]+年|([0-9０-９]+|元)年|\'[0-9０-９]{2}"
 year = re.compile(regex_year) 
-regex_year_suffix = "^[前後間度毎目半忌次で]|ごと|ぶり|を?かけ|が?かか|を要し|も?の([歳年]月|期?間)|((\d?\d|[一二三四五六七八九十][一二]?)[かカヶケ箇個]月)"
+regex_year_suffix = "^[前後間度毎目半忌次で]|ごと|ぶり|を?かけ|が?かか|を要し|も?の([歳年]月|期?間)|(([0-9０-９]?[0-9０-９]|[一二三四五六七八九十][一二]?)[かカヶケ箇個]月)"
 year_suffix = re.compile(regex_year_suffix)
 regex_year_prefix = "\.$"
 year_prefix = re.compile(regex_year_prefix)
-regex_date = "(\d?\d|[一二三四五六七八九十][一二]?)月(\d?\d|[二三]?[十]?[一二三四五六七八九])日"
+regex_date = "([0-1０-１]?[0-9０-９]|[一二三四五六七八九十][一二]?)月([0-3０-３]?[0-9０-９]|[二三]?[十]?[一二三四五六七八九])日"
 date = re.compile(regex_date) 
 
 Hiragana = re.compile("([\u3041-\u309F]+)")

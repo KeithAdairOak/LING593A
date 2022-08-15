@@ -13,9 +13,9 @@ import re
 config = json.load(open('config.json'))
 outputpath = config['outputpath']
 #outputpath = "E:\\Program Files\\Oracle\\VirtualBox\\out\\"
-regex_year = "(西暦|紀元[前後])?\d+年|(\d+|元)年|\'\d{2}"
+regex_year = "(西暦|紀元[前後])?[0-9０-９]+年|([0-9０-９]+|元)年|\'[0-9０-９]{2}"
 year = re.compile(regex_year) 
-regex_date = "(\d?\d|[一二三四五六七八九十][一二]?)月(\d?\d|[二三]?[十]?[一二三四五六七八九])日"
+regex_date = "([0-1０-１]?[0-9０-９]|[一二三四五六七八九十][一二]?)月([0-3０-３]?[0-9０-９]|[二三]?[十]?[一二三四五六七八九])日"
 date = re.compile(regex_date) 
 def rule_based_matching(text,compiled,label,annotator):
     span = [m.span(1) for m in compiled.finditer(text)]
