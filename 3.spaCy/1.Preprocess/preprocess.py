@@ -1,18 +1,20 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import spacy
 from spacy.tokens import DocBin
 import json
 import glob
 import tqdm
-import os
 import sys
 config = json.load(open('config.json'))
 outputpath = config['outputpath']
-if len(sys.argv) > 1:
-    filename = str(sys.argv[1])
-    div = int(sys.argv[2])
-else:
-    div = 10
-    filename = "extracted_wikidataonly_train.json"
+div = 10
+filename = "extracted_wikidataonly_train.json"
+if len(sys.argv) == 2:
+    div = int(sys.argv[1])
+elif len(sys.argv) == 3:
+    div = int(sys.argv[1])
+    filename = str(sys.argv[2])
 #div1 = int(sys.argv[1])
 #path = glob.glob(outputpath+'extracted_texts*')[-1].split("extracted_texts")[-1]
 #input = outputpath + 'extracted_texts'+path+'\\'+filename
