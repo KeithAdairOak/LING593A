@@ -119,7 +119,7 @@ def function(file,model,convert=True,labelcomparison=False):
         if re.search(r"^.*(\[\S+\].*\[/\S+\].*)+?",text):
             prev_text = ""
             for k,v in extract_ne(d,text).items():
-                ent_in_text[(k[0],k[1],v[0])] = (v[1:])
+                ent_in_text[k] = v
                 labels.append(v[2])
             dic4[d]=[]
             text_without_annotation = re.sub("\[/?[A-Z_]+?\]","",text)
@@ -144,56 +144,91 @@ def function(file,model,convert=True,labelcomparison=False):
     tn = {k:0 for k in labels}
     tl = {k:0 for k in labels}
 
+    with open("./"+model+"_result.txt","w",encoding="UTF8") as f:
+        f.write(f"Model\t{model}\n\n")
 
-    for k,v in ent_in_text.items():
-        tl[v[1]] += 1
+        for k,v in ent_in_text.items():
+            tl[v[2]] += 1
+            print_keys = []
+            if ent_in_doc.get(k):
+                delkeys_in_doc.append(k)
+                if ent_in_doc[k][0] == v[0]\
+                and ent_in_doc[k][2] == v[2]:
 
-        if ent_in_doc.get((k[0],k[1])):
-            delkeys_in_doc.append((k[0],k[1]))
-            if ent_in_doc[(k[0],k[1])][0] == k[2] \
-            and ent_in_doc[(k[0],k[1])][2] == v[1]:
-                tp[v[1]] += 1
+                    tp[v[2]] += 1
+                    f.write(f"TP:{v}\n")
+#                    print(f"TP:{v}")
 
-            elif ent_in_doc[(k[0],k[1])][0] < k[2] \
-            and  ent_in_doc[(k[0],k[1])][2] == v[1]:
-                end = ent_in_doc[(k[0],k[1])][0]
-                openflag = False
-                keys = []
-                while end <= k[2]:
-                    if ent_in_doc.get((k[0],end)):
-                        if ent_in_doc[((k[0],end))][2] == v[1]:
-                            openflag = True
-                            keys.append((k[0],end))
+                elif ent_in_doc[k][0] < v[0]\
+                and  ent_in_doc[k][2] == v[2]:
+                    end = ent_in_doc[k][0]
+                    openflag = False
+                    keys = []
+                    print_keys.append(k)
+                    while end <= v[0]:
+                        if ent_in_doc.get((k[0],end)):
+                            if ent_in_doc[((k[0],end))][2] == v[2]:
+                                openflag = True
+                                keys.append((k[0],end))
+                            else:
+                                break
+                            end = ent_in_doc[((k[0],end))][0]
+                        elif v[0]== end and openflag:
+                            tp[v[2]] += 1
+                            delkeys_in_doc.extend(keys)
+                            print_keys.extend(keys)
+                            for key in print_keys:
+                                f.write(f"TP:{v} <-> {ent_in_doc[key]}\n")
+#                                print(f"TP:{v} <-> {ent_in_doc[key]}")
+                            break        
                         else:
                             break
-                        end = ent_in_doc[((k[0],end))][0]
-                    elif k[2] == end and openflag:
-                        tp[v[1]] += 1
-                        delkeys_in_doc.extend(keys)
-                        break        
-                    else:
-                        break
-                if not openflag:
-                    fp[v[1]] += 1
+                    if not openflag:
+                        for key in print_keys:
+                            f.write(f"FP:{v} <-> {ent_in_doc[key]}\n")
+#                            print(f"FP:{v} <-> {ent_in_doc[key]}")
+                        fp[v[2]] += 1
+                
+                elif ent_in_doc[k][0] > v[0]\
+                and ent_in_doc[k][2] == v[2]\
+                and ent_in_text.get((k[0],v[0])):
+                   
+                    tp[v[2]] += 1
+                    f.write(f"TP:{v} <-> {ent_in_doc[k][1:]}\n")
+#                    print(f"TP:{v} <-> {ent_in_doc[k][1:]}")
+                    ent_in_doc[(k[0],v[0])] = (v[0]+len(v[1]), ent_in_doc[k][1][len(v[1]):] ,v[2])
+                
+                else:
+                    f.write(f"FP:{v} <-> {ent_in_doc[k]}\n")
+#                    print(f"FP:{v} <-> {ent_in_doc[k]}")
+                    fp[v[2]] += 1
             else:
-                fp[v[1]] += 1
-        else:
-            openflag = False
-            for d in [d for d in ent_in_doc.items() if d[0][0] == k[0] and d[0][1] < k[1] and d[1][0] >= k[2]]:
-                delkeys_in_doc.append(d[0])
-                openflag = True
-            for d in [d for d in ent_in_doc.items() if d[0][0] == k[0] and d[0][1] > k[1] and d[1][0] <= k[2]]:
-                delkeys_in_doc.append(d[0])
-                openflag = True
-            if openflag :
-                fp[v[1]] += 1
-            else:
-                fn[v[1]] += 1
+                openflag = False
+                for d in [i for i,j in ent_in_doc.items() if i[0] == k[0] and i[1] < k[1] and j[0] >= v[0]]:
+                    print_keys.append(d)
+                    delkeys_in_doc.append(d)
+                    openflag = True
+                for d in [i for i,j in ent_in_doc.items() if i[0] == k[0] and i[1] > k[1] and j[0] <= v[0]]:
+#                for d in [d for d in ent_in_doc.items() if d[0][0] == k[0] and d[0][1] > k[1] and d[1][0] <= k[2]]:
+                    print_keys.append(d)
+                    delkeys_in_doc.append(d)
+                    openflag = True
+                if openflag :
+                    for key in print_keys:
+                        f.write(f"FP:{v} <-> {ent_in_doc[key]}\n")
+#                        print(f"FP:{v} <-> {ent_in_doc[key]}")
+                    fp[v[2]] += 1
+                else:
+                    f.write(f"FN:{v}\n")
+#                    print(f"FN:{v}")
+                    fn[v[2]] += 1
 
-    for keys in set(delkeys_in_doc):
-        del ent_in_doc[keys] 
-    for v in ent_in_doc.values():
-        tn[v[2]] += 1
+        for keys in set(delkeys_in_doc):
+            del ent_in_doc[keys] 
+        for v in ent_in_doc.values():
+#            f.write(f"TN:{v}\n")
+#            print(f"TN:{v}")
+            tn[v[2]] += 1
 
     with open("./"+model+".txt","w",encoding="UTF8") as f:
         f.write(f"Model\t{model}\n\n")

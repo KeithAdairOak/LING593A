@@ -1,6 +1,6 @@
 import json
 import os
-from nltk.corpus import stopwords
+#from nltk.corpus import stopwords
 #stop = set(stopwords.words('english'))
 #stop = set(stopwords.words('japanese'))
 
