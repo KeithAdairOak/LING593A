@@ -1,5 +1,4 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import spacy
 from spacy.tokens import DocBin
 import json
